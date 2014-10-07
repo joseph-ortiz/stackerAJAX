@@ -12,68 +12,63 @@ $(document).ready(function() {
         // zero out results if previous search has run
         $('.results').html('');
         // get the value of the top answering users
-        var topic = $(this).find("input[name='answerers']").val();
-        getTopics(topic);
+        var tag = $(this).find("input[name='answerers']").val();
+        getTopicsByTagName(tag);
     });
 });
 
 // this function takes the question object returned by StackOverflow 
 // and creates new result to be appended to DOM
+var showAnswerer = function(so_user) {
+
+    var result = $('.templates .user').clone();
+    // set the date asked property in result
+    var rep = result.find('.reputation');
+    rep.text(so_user.user.reputation);
+
+    var userName = result.find('.display-name');
+    userName.text(so_user.user.display_name);
+
+    var postCount = result.find('.post-count');
+    postCount.text(so_user.post_count);
+
+    var score = result.find('.score');
+    score.text(so_user.score);
+
+    var profileImage = result.find('.profile-image');
+    $(profileImage).attr("src", so_user.user.profile_image)
+   
+    return result;
+};
+
+// this function takes the question object returned by StackOverflow 
+// and creates new result to be appended to DOM
 var showQuestion = function(question, isTopicResult) {
 
-
     // clone our result template code
-   
-   //TODO:factor this out to it's own function
-    if (isTopicResult === true) {
-	 var result = $('.templates .user').clone();
+    var result = $('.templates .question').clone();
+    // Set the question properties in result
+    var questionElem = result.find('.question-text a');
+    questionElem.attr('href', question.link);
+    questionElem.text(question.title);
 
-        // set the date asked property in result
-        var rep = result.find('.reputation');
-        rep.text(question.user.reputation);
+    // set the date asked property in result
+    var asked = result.find('.asked-date');
+    var date = new Date(1000 * question.creation_date);
+    asked.text(date.toString());
 
- 		var userName = result.find('.display-name');
-        userName.text(question.user.display_name);
+    // set the #views for question property in result
+    var viewed = result.find('.viewed');
+    viewed.text(question.view_count);
 
-        var postCount = result.find('.post-count');
-        postCount.text(question.post_count);
-
-		var score = result.find('.score');
-        postCount.text(question.score);
-
-        var profileImage = result.find('.profile-image');
-       $(profileImage).attr("src", question.user.profile_image)
-
-
-
-    } else {
-        // clone our result template code
-        var result = $('.templates .question').clone();
-        // Set the question properties in result
-        var questionElem = result.find('.question-text a');
-        questionElem.attr('href', question.link);
-        questionElem.text(question.title);
-
-        // set the date asked property in result
-        var asked = result.find('.asked-date');
-        var date = new Date(1000 * question.creation_date);
-        asked.text(date.toString());
-
-        // set the #views for question property in result
-        var viewed = result.find('.viewed');
-        viewed.text(question.view_count);
-
-        // set some properties related to asker
-        var asker = result.find('.asker');
-        asker.html('<p>Name: <a target="_blank" href=http://stackoverflow.com/users/' + question.owner.user_id + ' >' +
-            question.owner.display_name +
-            '</a>' +
-            '</p>' +
-            '<p>Reputation: ' + question.owner.reputation + '</p>'
-        );
-
-    }
-
+    // set some properties related to asker
+    var asker = result.find('.asker');
+    asker.html('<p>Name: <a target="_blank" href=http://stackoverflow.com/users/' + question.owner.user_id + ' >' +
+        question.owner.display_name +
+        '</a>' +
+        '</p>' +
+        '<p>Reputation: ' + question.owner.reputation + '</p>'
+    );
     return result;
 };
 
@@ -126,10 +121,7 @@ var getUnanswered = function(tags) {
         });
 };
 
-
-// takes a string of semi-colon separated tags to be searched
-// for on StackOverflow
-var getTopics = function(tag) {
+var getTopicsByTagName = function(tag) {
 
     // the parameters we need to pass in our request to StackOverflow's API
     var request = encodeURIComponent(tag);
@@ -140,14 +132,13 @@ var getTopics = function(tag) {
             type: "GET",
         })
         .done(function(result) {
-            alert("done");
-            var searchResults = showSearchResults(request.tagged, result.items.length);
+            var searchResults = showSearchResults(tag, result.items.length);
 
             $('.search-results').html(searchResults);
 
             $.each(result.items, function(i, item) {
                 var isGetTopicsMethod = true;
-                var question = showQuestion(item, isGetTopicsMethod);
+                var question = showAnswerer(item, isGetTopicsMethod);
                 $('.results').append(question);
             });
         })
